@@ -1,0 +1,237 @@
+{
+  "info": {
+    "name": "Task4 — Booking State Machine",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "Сценарий 1 — Нормальный путь",
+      "item": [
+        {
+          "name": "Шаг 1 — AcceptApplication",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-001\",\n  \"event\": \"AcceptApplication\",\n  \"idempotency_key\": \"evt-001-1\",\n  \"correlation_id\": \"corr-001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Шаг 2 — Book",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-001\",\n  \"event\": \"Book\",\n  \"idempotency_key\": \"evt-001-2\",\n  \"correlation_id\": \"corr-001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Шаг 3 — GrantAccess",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-001\",\n  \"event\": \"GrantAccess\",\n  \"idempotency_key\": \"evt-001-3\",\n  \"correlation_id\": \"corr-001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Шаг 4 — Complete",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-001\",\n  \"event\": \"Complete\",\n  \"idempotency_key\": \"evt-001-4\",\n  \"correlation_id\": \"corr-001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Проверить состояние (ожидаем Завершён)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/process/booking-001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Сценарий 2 — Идемпотентность",
+      "item": [
+        {
+          "name": "Первый запрос",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-002\",\n  \"event\": \"AcceptApplication\",\n  \"idempotency_key\": \"evt-002-1\",\n  \"correlation_id\": \"corr-002\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Повтор того же запроса (ожидаем duplicate)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-002\",\n  \"event\": \"AcceptApplication\",\n  \"idempotency_key\": \"evt-002-1\",\n  \"correlation_id\": \"corr-002\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Проверить состояние (ожидаем ЗаявкаПринята)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/process/booking-002"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Сценарий 3 — Компенсация при сбое GrantAccess",
+      "item": [
+        {
+          "name": "Шаг 1 — AcceptApplication",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-003\",\n  \"event\": \"AcceptApplication\",\n  \"idempotency_key\": \"evt-003-1\",\n  \"correlation_id\": \"corr-003\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Шаг 2 — Book",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-003\",\n  \"event\": \"Book\",\n  \"idempotency_key\": \"evt-003-2\",\n  \"correlation_id\": \"corr-003\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Шаг 3 — GrantAccess со сбоем (ожидаем КомпенсацияВыполнена)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-003\",\n  \"event\": \"GrantAccess\",\n  \"idempotency_key\": \"evt-003-3\",\n  \"correlation_id\": \"corr-003\",\n  \"simulate_failure\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Проверить состояние (ожидаем КомпенсацияВыполнена)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/process/booking-003"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Сценарий 4 — Сбой без компенсации",
+      "item": [
+        {
+          "name": "AcceptApplication со сбоем (ожидаем Ошибка)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-004\",\n  \"event\": \"AcceptApplication\",\n  \"idempotency_key\": \"evt-004-1\",\n  \"correlation_id\": \"corr-004\",\n  \"simulate_failure\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Проверить состояние (ожидаем Ошибка)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/process/booking-004"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Сценарий 5 — Неверный переход",
+      "item": [
+        {
+          "name": "Создать процесс",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-005\",\n  \"event\": \"AcceptApplication\",\n  \"idempotency_key\": \"evt-005-1\",\n  \"correlation_id\": \"corr-005\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Пропустить шаги и сразу Complete (ожидаем ошибку)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/event",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"process_key\": \"booking-005\",\n  \"event\": \"Complete\",\n  \"idempotency_key\": \"evt-005-2\",\n  \"correlation_id\": \"corr-005\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health checks",
+      "item": [
+        {
+          "name": "Liveness — GET /health/live",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health/live"
+          }
+        },
+        {
+          "name": "Readiness — GET /health/ready",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health/ready"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Метрики — GET /metrics",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/metrics"
+      }
+    }
+  ]
+}
